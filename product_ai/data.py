@@ -34,7 +34,8 @@ def load_data(data_dir=DATA_DIR, with_sessions=True):
     users = users.merge(countries, on="country_code", how="left")
     users["country_name"] = users["country_name"].fillna("Unknown")
     users["platform"] = users["app"].map(PLATFORMS).fillna("Unknown")
-    users["age_group"] = pd.cut(users["age"], AGE_BINS, labels=AGE_LABELS).astype(str)
+    # без astype(str): інакше пропущений вік стає рядком "nan" і не ловиться через notna()
+    users["age_group"] = pd.cut(users["age"], AGE_BINS, labels=AGE_LABELS).astype(object)
     users["is_new"] = (users["reg_dt"] >= START) & (users["reg_dt"] < END)
 
     attrs = users[["user_id", "country_name", "platform", "gender", "age_group"]]

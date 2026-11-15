@@ -35,7 +35,7 @@ def to_markdown(res):
         for i, h in enumerate(a.get("hypotheses", []), 1):
             md.append(f"**{i}. {h['title']}** (пріоритет: {PRIO.get(h['priority'], h['priority'])}; "
                       f"факти: {', '.join(h['fact_ids'])})  \n{h['statement']}  \n"
-                      f"*Чому важливо:* {h['why_it_matters']}  \n*Як перевірити:* {h['how_to_check']}")
+                      f"*Чому важливо:* {h['why_it_matters']}  \n*Як перевірити:* {h['how_to_check']}\n")
     elif k == "ask":
         md = [f"### Питання: {res['question']}"]
         if a.get("explanation"):
