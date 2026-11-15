@@ -53,7 +53,9 @@ def _collect(obj, acc):
     elif isinstance(obj, str):
         acc.extend(extract_numbers(obj))
     elif isinstance(obj, dict):
-        for v in obj.values():
+        for k, v in obj.items():
+            # числа бувають і в ключах: "35-44" у top_values, "p25" у профілі
+            acc.extend(float(x.replace(",", ".")) for x in re.findall(r"\d+(?:[.,]\d+)?", str(k)))
             _collect(v, acc)
     elif isinstance(obj, (list, tuple)):
         for v in obj:

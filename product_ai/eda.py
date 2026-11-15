@@ -30,7 +30,11 @@ def profile_table(df, name="table", period=(START, END), max_top=5):
             "missing_pct": round(100 * s.isna().mean(), 2) if n else 0.0,
             "unique": int(s.nunique(dropna=True)),
         }
-        if pd.api.types.is_bool_dtype(s):
+        if col.endswith("_id"):
+            # ідентифікатор: статистика і «викиди» для нього не мають сенсу
+            c["is_identifier"] = True
+            c["rows_per_id"] = round(n / c["unique"], 2) if c["unique"] else None
+        elif pd.api.types.is_bool_dtype(s):
             c["true_pct"] = round(100 * s.mean(), 2) if n else 0.0
         elif pd.api.types.is_datetime64_any_dtype(s):
             c["min"] = str(s.min())

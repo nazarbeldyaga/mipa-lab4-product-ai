@@ -25,23 +25,31 @@ class GeminiLLM:
         self.client = genai.Client(api_key=key)
         self.model = model or os.environ.get("GEMINI_MODEL", DEFAULT_MODEL)
         self.max_retries = max_retries
+        # для аналітичних текстів довге «обдумування» не потрібне, а відповідь з ним
+        # приходить у кілька разів довше; якщо модель не підтримує рівень, вимикаю
+        self.thinking_level = os.environ.get("GEMINI_THINKING", "low")
         self.usage = {"calls": 0, "input_tokens": 0, "output_tokens": 0}
 
     def structured(self, system, user, schema, tool_name="answer"):
         """Повертає dict, який відповідає schema (JSON Schema)."""
         from google.genai import errors, types
 
-        config = types.GenerateContentConfig(
-            system_instruction=system,
-            temperature=0,
-            response_mime_type="application/json",
-            response_json_schema=schema,
-        )
+        def make_config():
+            kw = dict(system_instruction=system, temperature=0,
+                      response_mime_type="application/json", response_json_schema=schema)
+            if self.thinking_level:
+                kw["thinking_config"] = types.ThinkingConfig(thinking_level=self.thinking_level)
+            return types.GenerateContentConfig(**kw)
+
         for attempt in range(self.max_retries + 1):
             try:
-                resp = self.client.models.generate_content(model=self.model, contents=user, config=config)
+                resp = self.client.models.generate_content(model=self.model, contents=user, config=make_config())
                 break
             except errors.APIError as e:
+                if getattr(e, "code", None) == 400 and self.thinking_level and "think" in str(e).lower():
+                    print("Модель не підтримує thinking_level, працюю без нього")
+                    self.thinking_level = None
+                    continue
                 # 429 - ліміт безкоштовного тарифу, 5xx - сервер перевантажений
                 if getattr(e, "code", None) in (429, 500, 503) and attempt < self.max_retries:
                     wait = 15 * (attempt + 1)
