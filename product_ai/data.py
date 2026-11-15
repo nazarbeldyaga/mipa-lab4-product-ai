@@ -25,10 +25,12 @@ def _read(name, data_dir, **kw):
 def load_data(data_dir=DATA_DIR, with_sessions=True):
     """Повертає dict з таблицями. users - довідник користувачів з атрибутами,
     які потім використовуються як розрізи (країна, платформа, стать, вік)."""
-    countries = _read("country_info_dict.csv", data_dir)
+    # код Намібії "NA" pandas за замовчуванням читає як пропуск, тому тут NaN - тільки порожні рядки
+    na = {"keep_default_na": False, "na_values": [""]}
+    countries = _read("country_info_dict.csv", data_dir, **na).drop_duplicates("country_code")
     features = _read("feature_type_dict.csv", data_dir)
 
-    users = _read("registrations.csv", data_dir, parse_dates=["reg_dt"])
+    users = _read("registrations.csv", data_dir, parse_dates=["reg_dt"], **na)
     users = users.merge(countries, on="country_code", how="left")
     users["country_name"] = users["country_name"].fillna("Unknown")
     users["platform"] = users["app"].map(PLATFORMS).fillna("Unknown")
